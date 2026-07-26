@@ -5,6 +5,7 @@ const connectDB = require("./config/db");
 const problemRoutes = require("./routes/problemRoutes");
 
 dotenv.config();
+console.log(process.env.GEMINI_API_KEY);
 
 // Connect to MongoDB
 connectDB();
