@@ -1,12 +1,37 @@
 const Problem = require("../models/Problem");
+const { analyzeProblem } = require("../services/geminiService");
 
-// Create Problem
+/// Create Problem
 const createProblem = async (req, res) => {
   try {
-    const problem = await Problem.create(req.body);
+    const {
+      title,
+      source,
+      problemLink,
+      content,
+      myNotes,
+    } = req.body;
+
+    // Ask Gemini to analyze the problem
+    const aiResponse = await analyzeProblem(content);
+
+    // Save everything to MongoDB
+    const problem = await Problem.create({
+      title,
+      source,
+      problemLink,
+      content,
+      myNotes,
+      pattern: aiResponse.pattern,
+      reasoning: aiResponse.reasoning,
+    });
+
     res.status(201).json(problem);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error(error);
+    res.status(500).json({
+      message: error.message,
+    });
   }
 };
 
