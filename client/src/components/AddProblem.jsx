@@ -7,6 +7,7 @@ function AddProblem() {
   const [link, setLink] = useState('')
   const [notes, setNotes] = useState('')
   const [analyze, setAnalyze] = useState(false)
+  const [submitted, setSubmitted] = useState(false)
 
   const submitHandle = (e) => {
     e.preventDefault()
@@ -36,6 +37,9 @@ function AddProblem() {
       setDescription('')
       setNotes('')
       setAnalyze(false)
+
+      setSubmitted(true)
+      setTimeout(() => setSubmitted(false), 2500)
     }, 3000)
   }
 
@@ -59,7 +63,7 @@ function AddProblem() {
 
         <div className="flex flex-col gap-1.5">
           <label htmlFor="title" className="text-xs font-mono text-neutral-500 uppercase tracking-wide">
-            Title
+            Title <span className="text-amber-600">*</span>
           </label>
           <input
             id="title"
@@ -73,7 +77,7 @@ function AddProblem() {
 
         <div className="flex flex-col gap-1.5">
           <label htmlFor="source" className="text-xs font-mono text-neutral-500 uppercase tracking-wide">
-            Source
+            Source <span className="text-amber-600">*</span>
           </label>
           <select
             id="source"
@@ -104,7 +108,7 @@ function AddProblem() {
 
         <div className="flex flex-col gap-1.5">
           <label htmlFor="description" className="text-xs font-mono text-neutral-500 uppercase tracking-wide">
-            Problem description
+            Problem description <span className="text-amber-600">*</span>
           </label>
           <textarea
             id="description"
@@ -119,7 +123,7 @@ function AddProblem() {
 
         <div className="flex flex-col gap-1.5">
           <label htmlFor="notes" className="text-xs font-mono text-neutral-500 uppercase tracking-wide">
-            My notes
+            My notes <span className="text-amber-600">*</span>
           </label>
           <textarea
             id="notes"
@@ -139,6 +143,12 @@ function AddProblem() {
         >
           {analyze ? 'Analyzing...' : 'Evaluate Problem'}
         </button>
+
+        {submitted && (
+          <p className="text-center text-sm font-medium text-green-600">
+            ✓ Problem added!
+          </p>
+        )}
       </form>
     </div>
   )
