@@ -21,3 +21,14 @@ Problem {
   
   createdAt: date
 }
+
+# routes
+POST /problems
+
+GET/problems
+
+GET /problems/:id
+
+PUT /problems/:id
+
+DELETE /problems/:id
