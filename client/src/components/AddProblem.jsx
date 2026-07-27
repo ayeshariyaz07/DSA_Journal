@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { Link } from "react-router-dom";
 import { ArrowRight, ArrowLeft, Check, ChevronDown } from "lucide-react";
 
 const STEPS = ["title", "source", "link", "description", "notes"];
@@ -92,11 +93,19 @@ function AddProblem() {
     <div className="min-h-screen w-full bg-[#FAFBFA] text-[#14171C] flex flex-col font-sans selection:bg-emerald-200">
       {/* top bar */}
       <div className="flex items-center justify-between px-6 sm:px-12 py-6 sm:py-8">
-        <div className="flex items-center gap-3 font-mono text-xs sm:text-sm tracking-widest text-slate-400">
-          <span className="text-[#14171C] font-semibold">
-            {String(done ? STEPS.length : step + 1).padStart(2, "0")}
-          </span>
-          <span>/ {String(STEPS.length).padStart(2, "0")}</span>
+        <div className="flex items-center gap-6">
+          <Link
+            to="/"
+            className="flex items-center gap-1.5 font-mono text-xs sm:text-sm tracking-widest text-slate-400 hover:text-emerald-600 transition-colors"
+          >
+            <ArrowLeft className="w-3.5 h-3.5" /> dashboard
+          </Link>
+          <div className="flex items-center gap-3 font-mono text-xs sm:text-sm tracking-widest text-slate-400">
+            <span className="text-[#14171C] font-semibold">
+              {String(done ? STEPS.length : step + 1).padStart(2, "0")}
+            </span>
+            <span>/ {String(STEPS.length).padStart(2, "0")}</span>
+          </div>
         </div>
 
         <div className="flex items-center gap-1.5">
@@ -282,12 +291,20 @@ function AddProblem() {
               <p className="text-slate-500 text-xl mt-3">
                 Filed under {source} — pattern tagging runs in the background.
               </p>
-              <button
-                onClick={reset}
-                className="mt-10 flex items-center gap-2 bg-[#14171C] hover:bg-emerald-600 text-white font-medium text-base px-7 py-3.5 rounded-lg transition-colors duration-300"
-              >
-                Add another <ArrowRight className="w-4 h-4" />
-              </button>
+              <div className="flex items-center gap-4 mt-10">
+                <button
+                  onClick={reset}
+                  className="flex items-center gap-2 bg-[#14171C] hover:bg-emerald-600 text-white font-medium text-base px-7 py-3.5 rounded-lg transition-colors duration-300"
+                >
+                  Add another <ArrowRight className="w-4 h-4" />
+                </button>
+                <Link
+                  to="/"
+                  className="flex items-center gap-1.5 text-slate-400 hover:text-slate-600 text-sm font-medium transition-colors"
+                >
+                  <ArrowLeft className="w-3.5 h-3.5" /> back to dashboard
+                </Link>
+              </div>
             </div>
           )}
         </div>
