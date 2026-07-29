@@ -1,8 +1,9 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { ArrowRight } from 'lucide-react'
 import ProblemCard from '../components/ProblemCard'
 import { dummyProblems } from '../data/dummyProblems'
+import { getProblems } from '../api/problemApi'
 
 const ratingRank = { Optimal: 1, Suboptimal: 2, 'Needs improvement': 3 }
 
@@ -24,16 +25,36 @@ function Dashboard() {
   const [activeFilter, setActiveFilter] = useState('All')
   const [sortBy, setSortBy] = useState('newest')
   const [search, setSearch] = useState('')
+  const [problemsData, setProblemsData] = useState([])
+  useEffect(() => {
+  const fetchProblems = async () => {
+    try {
+      const data = await getProblems()
 
-  const patterns = [...new Set(dummyProblems.map((p) => p.pattern).filter(Boolean))]
+      const formattedData = data.map((problem) => ({
+        ...problem,
+        id: problem._id,
+      }))
+
+      setProblemsData(formattedData)
+
+    } catch (error) {
+      console.error("Error fetching problems:", error)
+    }
+  }
+
+  fetchProblems()
+}, [])
+
+  const patterns = [...new Set(problemsData.map((p) => p.pattern).filter(Boolean))]
   const patternCounts = patterns.reduce((acc, p) => {
-    acc[p] = dummyProblems.filter((prob) => prob.pattern === p).length
+    acc[p] = problemsData.filter((prob) => prob.pattern === p).length
     return acc
   }, {})
 
-  const ratedTotal = dummyProblems.filter((p) => p.rating).length
+  const ratedTotal = problemsData.filter((p) => p.rating).length
 
-  let problems = [...dummyProblems]
+  let problems = [...problemsData]
   if (activeFilter !== 'All') {
     problems = problems.filter((p) => p.pattern === activeFilter)
   }
@@ -63,7 +84,7 @@ function Dashboard() {
       {/* top bar */}
       <div className="flex items-center justify-between px-6 sm:px-12 py-6 sm:py-8">
         <div className="font-mono text-xs sm:text-sm tracking-widest text-slate-400">
-          <span className="text-[#14171C] font-semibold">{dummyProblems.length}</span>
+          <span className="text-[#14171C] font-semibold">{problemsData.length}</span>
           {' '}problems logged
         </div>
         <Link
@@ -83,7 +104,7 @@ function Dashboard() {
         {/* rating stat cards */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-10">
           {ratingStats.map((stat) => {
-            const count = dummyProblems.filter((p) => p.rating === stat.key).length
+            const count = problemsData.filter((p) => p.rating === stat.key).length
             const pct = ratedTotal ? Math.round((count / ratedTotal) * 100) : 0
             return (
               <div key={stat.key} className={`border rounded-xl p-4 ${stat.bg}`}>
@@ -132,7 +153,7 @@ function Dashboard() {
           >
             All
             <span className={`text-xs rounded-full px-1.5 ${activeFilter === 'All' ? 'bg-white/20' : 'bg-slate-100'}`}>
-              {dummyProblems.length}
+              {problemsData.length}
             </span>
           </button>
           {patterns.map((pattern) => (

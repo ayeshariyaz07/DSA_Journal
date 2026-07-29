@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { ArrowRight, ArrowLeft, Check, ChevronDown } from "lucide-react";
+import { createProblem } from "../api/problemApi";
 
 const STEPS = ["title", "source", "link", "description", "notes"];
 
@@ -45,24 +46,28 @@ function AddProblem() {
     setStep((s) => s - 1);
   };
 
-  const submit = () => {
-    setAnalyzing(true);
-    setTimeout(() => {
-      const newProblem = {
-        title,
-        source,
-        problemLink: link,
-        content: description,
-        myNotes: notes,
-        pattern: "Two Pointers",
-        reasoning: "Replace this with Gemini analysis.",
-        createdAt: new Date().toISOString(),
-      };
-      console.log(newProblem);
-      setAnalyzing(false);
-      setDone(true);
-    }, 2600);
-  };
+  const submit = async () => {
+  setAnalyzing(true);
+
+  try {
+    const newProblem = {
+      title,
+      source,
+      problemLink: link,
+      content: description,
+      myNotes: notes,
+    };
+
+    await createProblem(newProblem);
+
+    setAnalyzing(false);
+    setDone(true);
+
+  } catch (error) {
+    console.error("Error creating problem:", error);
+    setAnalyzing(false);
+  }
+};
 
   const reset = () => {
     setTitle("");
