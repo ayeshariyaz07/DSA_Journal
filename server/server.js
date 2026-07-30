@@ -3,6 +3,7 @@ const cors = require("cors");
 const dotenv = require("dotenv");
 const connectDB = require("./config/db");
 const problemRoutes = require("./routes/problemRoutes");
+const userRoutes = require("./routes/userRoutes");
 
 dotenv.config();
 
@@ -21,6 +22,9 @@ app.get("/", (req, res) => {
   res.send("🚀 DSA Journal Backend is Running!");
 });
 
+// user routes
+app.use("/api/users", userRoutes);
+
 // Port
 const PORT = process.env.PORT || 5000;
 
@@ -28,3 +32,4 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`🚀 Server is running on port ${PORT}`);
 });
+
