@@ -1,12 +1,14 @@
 import { useState, useRef, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { ArrowRight, ArrowLeft, Check, ChevronDown } from "lucide-react";
+import { createProblem } from "../api";
 
 const STEPS = ["title", "source", "link", "description", "notes"];
 
 function AddProblem() {
+  const navigate = useNavigate();
   const [step, setStep] = useState(0);
-  const [dir, setDir] = useState(1); // 1 = forward, -1 = back
+  const [dir, setDir] = useState(1);
   const [source, setSource] = useState("leetcode");
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -15,6 +17,7 @@ function AddProblem() {
   const [analyzing, setAnalyzing] = useState(false);
   const [done, setDone] = useState(false);
   const [shake, setShake] = useState(false);
+  const [error, setError] = useState("");
 
   const inputRef = useRef(null);
 
@@ -45,23 +48,30 @@ function AddProblem() {
     setStep((s) => s - 1);
   };
 
-  const submit = () => {
+  const submit = async () => {
+    setError("");
     setAnalyzing(true);
-    setTimeout(() => {
-      const newProblem = {
+
+    try {
+      // Gemini analysis now happens server-side, inside POST /problems —
+      // just send the raw fields, backend returns pattern + reasoning already filled in.
+      const saved = await createProblem({
         title,
         source,
         problemLink: link,
         content: description,
         myNotes: notes,
-        pattern: "Two Pointers",
-        reasoning: "Replace this with Gemini analysis.",
-        createdAt: new Date().toISOString(),
-      };
-      console.log(newProblem);
+      });
+
+      console.log("Saved with AI analysis:", saved);
+
       setAnalyzing(false);
       setDone(true);
-    }, 2600);
+    } catch (err) {
+      console.log(err);
+      setAnalyzing(false);
+      setError("Failed to save problem");
+    }
   };
 
   const reset = () => {
@@ -73,6 +83,7 @@ function AddProblem() {
     setStep(0);
     setDir(1);
     setDone(false);
+    setError("");
   };
 
   const handleKey = (e) => {
@@ -82,12 +93,14 @@ function AddProblem() {
     }
   };
 
-  const verdict = analyzing ? "RUNNING…" : done ? "ACCEPTED" : "DRAFT";
+  const verdict = analyzing ? "SAVING…" : done ? "SAVED" : error ? "ERROR" : "DRAFT";
   const verdictColor = analyzing
     ? "text-amber-500"
     : done
-    ? "text-emerald-500"
-    : "text-slate-400";
+      ? "text-emerald-500"
+      : error
+        ? "text-rose-500"
+        : "text-slate-400";
 
   return (
     <div className="min-h-screen w-full bg-[#FAFBFA] text-[#14171C] flex flex-col font-sans selection:bg-emerald-200">
@@ -112,13 +125,12 @@ function AddProblem() {
           {STEPS.map((s, i) => (
             <div
               key={s}
-              className={`h-1 rounded-full transition-all duration-500 ease-out ${
-                i < step || done
-                  ? "w-6 bg-emerald-500"
-                  : i === step
+              className={`h-1 rounded-full transition-all duration-500 ease-out ${i < step || done
+                ? "w-6 bg-emerald-500"
+                : i === step
                   ? "w-8 bg-[#14171C]"
                   : "w-3 bg-slate-200"
-              }`}
+                }`}
             />
           ))}
         </div>
@@ -130,22 +142,15 @@ function AddProblem() {
           {!done ? (
             <div
               key={step}
-              className={`transition-all duration-500 ease-out ${
-                shake ? "animate-[wiggle_0.4s_ease-in-out]" : ""
-              }`}
+              className={`transition-all duration-500 ease-out ${shake ? "animate-[wiggle_0.4s_ease-in-out]" : ""
+                }`}
               style={{
-                animation: `${
-                  dir === 1 ? "slideUp" : "slideDown"
-                } 0.45s cubic-bezier(0.16,1,0.3,1)`,
+                animation: `${dir === 1 ? "slideUp" : "slideDown"
+                  } 0.45s cubic-bezier(0.16,1,0.3,1)`,
               }}
             >
-              {/* Step 1 — Title */}
               {step === 0 && (
-                <Question
-                  index="01"
-                  label="Give it a recognizable name"
-                  title="What's the problem called?"
-                >
+                <Question index="01" label="Give it a recognizable name" title="What's the problem called?">
                   <input
                     ref={inputRef}
                     type="text"
@@ -158,13 +163,8 @@ function AddProblem() {
                 </Question>
               )}
 
-              {/* Step 2 — Source */}
               {step === 1 && (
-                <Question
-                  index="02"
-                  label="Where did you find it"
-                  title="Which judge is this from?"
-                >
+                <Question index="02" label="Where did you find it" title="Which judge is this from?">
                   <div className="relative">
                     <select
                       ref={inputRef}
@@ -182,13 +182,8 @@ function AddProblem() {
                 </Question>
               )}
 
-              {/* Step 3 — Link */}
               {step === 2 && (
-                <Question
-                  index="03"
-                  label="Optional — paste the original URL"
-                  title="Got a link to it?"
-                >
+                <Question index="03" label="Optional — paste the original URL" title="Got a link to it?">
                   <input
                     ref={inputRef}
                     type="text"
@@ -201,13 +196,8 @@ function AddProblem() {
                 </Question>
               )}
 
-              {/* Step 4 — Description */}
               {step === 3 && (
-                <Question
-                  index="04"
-                  label="Paste the full problem statement"
-                  title="What's the problem asking?"
-                >
+                <Question index="04" label="Paste the full problem statement" title="What's the problem asking?">
                   <textarea
                     ref={inputRef}
                     rows={5}
@@ -220,13 +210,8 @@ function AddProblem() {
                 </Question>
               )}
 
-              {/* Step 5 — Notes */}
               {step === 4 && (
-                <Question
-                  index="05"
-                  label="How did you actually solve it"
-                  title="Walk through your approach."
-                >
+                <Question index="05" label="How did you actually solve it" title="Walk through your approach.">
                   <textarea
                     ref={inputRef}
                     rows={4}
@@ -239,7 +224,10 @@ function AddProblem() {
                 </Question>
               )}
 
-              {/* controls */}
+              {error && (
+                <p className="text-rose-500 text-sm font-medium mt-4">{error}</p>
+              )}
+
               <div className="flex items-center gap-4 mt-14">
                 <button
                   onClick={goNext}
@@ -247,9 +235,7 @@ function AddProblem() {
                   className="group flex items-center gap-2 bg-[#14171C] hover:bg-emerald-600 disabled:opacity-50 text-white font-medium text-base px-7 py-3.5 rounded-lg transition-colors duration-300"
                 >
                   {analyzing ? (
-                    <span className="font-mono text-sm tracking-wide">
-                      analyzing…
-                    </span>
+                    <span className="font-mono text-sm tracking-wide">saving…</span>
                   ) : (
                     <>
                       {step === STEPS.length - 1 ? "Submit" : "OK"}
@@ -282,14 +268,14 @@ function AddProblem() {
                   <Check className="w-6 h-6 text-white" strokeWidth={3} />
                 </span>
                 <span className="font-mono text-sm tracking-widest text-emerald-600">
-                  ACCEPTED
+                  SAVED
                 </span>
               </div>
               <h1 className="text-4xl sm:text-5xl font-bold italic leading-tight">
                 Logged &ldquo;{title}&rdquo;
               </h1>
               <p className="text-slate-500 text-xl mt-3">
-                Filed under {source} — pattern tagging runs in the background.
+                Filed under {source} — pattern tagged and saved to your database.
               </p>
               <div className="flex items-center gap-4 mt-10">
                 <button
