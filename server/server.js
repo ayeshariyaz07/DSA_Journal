@@ -3,6 +3,7 @@ dns.setServers(["8.8.8.8"]);
 
 const dotenv = require("dotenv")
 dotenv.config();
+console.log(process.env.GEMINI_API_KEY);
 
 
 const sendEmail = require("./utils/sendEmail");

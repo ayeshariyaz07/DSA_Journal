@@ -42,17 +42,21 @@ Return only JSON, no markdown formatting, no extra text:
 // Create Problem
 const createProblem = async (req, res) => {
   try {
+    const { title, source, content, problemLink, myNotes } = req.body;
+
+    if (!title || !source || !content) {
+      return res.status(400).json({
+        message: "Title, source and content are required.",
+      });
+    }
+
     let pattern = "";
     let reasoning = "";
     let rating = "";
     let ratingFeedback = "";
 
     try {
-      const analysis = await analyzeWithGemini(
-        req.body.title,
-        req.body.content,
-        req.body.myNotes
-      );
+      const analysis = await analyzeWithGemini(title, content, myNotes);
       pattern = analysis.pattern;
       reasoning = analysis.reasoning;
       rating = analysis.rating;
@@ -62,7 +66,11 @@ const createProblem = async (req, res) => {
     }
 
     const problem = await Problem.create({
-      ...req.body,
+      title,
+      source,
+      problemLink,
+      content,
+      myNotes,
       pattern,
       reasoning,
       rating,
@@ -78,7 +86,15 @@ const createProblem = async (req, res) => {
 // Get All Problems
 const getProblems = async (req, res) => {
   try {
-    const problems = await Problem.find();
+    const { pattern } = req.query;
+
+    let query = {};
+    if (pattern) {
+      query.pattern = pattern;
+    }
+
+    const problems = await Problem.find(query);
+
     res.status(200).json(problems);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -90,7 +106,13 @@ const updateProblem = async (req, res) => {
   try {
     const updated = await Problem.findByIdAndUpdate(req.params.id, req.body, {
       new: true,
+      runValidators: true,
     });
+
+    if (!updated) {
+      return res.status(404).json({ message: "Problem not found" });
+    }
+
     res.status(200).json(updated);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -100,7 +122,12 @@ const updateProblem = async (req, res) => {
 // Delete Problem
 const deleteProblem = async (req, res) => {
   try {
-    await Problem.findByIdAndDelete(req.params.id);
+    const deleted = await Problem.findByIdAndDelete(req.params.id);
+
+    if (!deleted) {
+      return res.status(404).json({ message: "Problem not found" });
+    }
+
     res.status(200).json({ message: "Problem deleted successfully" });
   } catch (error) {
     res.status(500).json({ message: error.message });
