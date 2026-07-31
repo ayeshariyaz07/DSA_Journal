@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
-import { ArrowRight, User } from 'lucide-react'
+import { useState, useEffect, useRef } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
+import { ArrowRight, User, LogOut, UserCircle } from 'lucide-react'
 import ProblemCard from '../components/ProblemCard'
 import { fetchProblems } from '../api'
 
@@ -11,6 +11,7 @@ const sortOptions = [
 ]
 
 function Dashboard() {
+  const [showMenu, setShowMenu] = useState(false)
   const [problems, setProblems] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -18,6 +19,27 @@ function Dashboard() {
   const [activeFilter, setActiveFilter] = useState('All')
   const [sortBy, setSortBy] = useState('newest')
   const [search, setSearch] = useState('')
+
+  const navigate = useNavigate()
+  const menuRef = useRef(null)
+  const storedUser = JSON.parse(localStorage.getItem('user') || 'null')
+
+  const handleLogout = () => {
+    localStorage.removeItem('token')
+    localStorage.removeItem('user')
+    navigate('/login')
+  }
+
+  // Close the dropdown when clicking outside it
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (menuRef.current && !menuRef.current.contains(e.target)) {
+        setShowMenu(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
 
   useEffect(() => {
     fetchProblems()
@@ -62,31 +84,74 @@ function Dashboard() {
   return (
     <div className="min-h-screen w-full bg-[#FAFBFA] text-[#14171C] font-sans selection:bg-emerald-200">
       {/* top bar */}
-      <div className="flex items-center justify-between px-6 sm:px-12 py-6 sm:py-8">
-        <div className="flex items-center gap-4">
-          <Link
-            to="/profile"
-            className="flex items-center justify-center w-10 h-10 rounded-full bg-white border-2 border-[#14171C] hover:border-emerald-400 transition-colors"
-            title="Profile"
-          >
-            <User className="w-4 h-4 text-slate-500" />
-          </Link>
-          <div className="font-mono text-xs sm:text-sm tracking-widest text-slate-400">
-            <span className="text-[#14171C] font-semibold">{problems.length}</span>
-            {' '}problems logged
+      <div className="w-full border-b border-slate-100">
+        <div className="max-w-5xl mx-auto px-6 sm:px-12 py-6 flex items-center justify-between">
+          {/* Left — brand */}
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-[#14171C] text-white flex items-center justify-center font-bold italic">
+              DS
+            </div>
+            <div>
+              <h2 className="font-bold italic text-lg leading-tight">DSA Journal</h2>
+              <p className="text-xs text-slate-400 font-mono">
+                {problems.length} problem{problems.length !== 1 ? 's' : ''} logged
+              </p>
+            </div>
+          </div>
+
+          {/* Right — actions */}
+          <div className="flex items-center gap-3">
+            <Link
+              to="/add"
+              className="group flex items-center gap-2 bg-[#14171C] hover:bg-emerald-600 text-white font-medium text-sm px-5 py-3 rounded-lg transition-colors duration-300"
+            >
+              + Add Problem
+              <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
+            </Link>
+
+            <div className="relative" ref={menuRef}>
+              <button
+                onClick={() => setShowMenu((s) => !s)}
+                className="w-11 h-11 rounded-full border-2 border-[#14171C] hover:border-emerald-500 flex items-center justify-center transition-colors"
+              >
+                <User className="w-5 h-5 text-slate-500" />
+              </button>
+
+              {showMenu && (
+                <div className="absolute right-0 mt-3 w-56 bg-white border border-slate-200 rounded-xl shadow-lg overflow-hidden z-50">
+                  <div className="px-5 py-4 border-b border-slate-100">
+                    <p className="font-semibold text-slate-800 truncate">
+                      {storedUser?.name || 'Account'}
+                    </p>
+                    <p className="text-sm text-slate-400 truncate">
+                      {storedUser?.email || ''}
+                    </p>
+                  </div>
+
+                  <Link
+                    to="/profile"
+                    onClick={() => setShowMenu(false)}
+                    className="flex items-center gap-2 px-5 py-3 text-sm text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 transition-colors"
+                  >
+                    <UserCircle className="w-4 h-4" />
+                    Profile
+                  </Link>
+
+                  <button
+                    onClick={handleLogout}
+                    className="w-full flex items-center gap-2 text-left px-5 py-3 text-sm text-rose-600 hover:bg-rose-50 transition-colors"
+                  >
+                    <LogOut className="w-4 h-4" />
+                    Logout
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
-
-        <Link
-          to="/add"
-          className="group flex items-center gap-2 bg-[#14171C] hover:bg-emerald-600 text-white font-medium text-sm px-5 py-3 rounded-lg transition-colors duration-300"
-        >
-          + Add Problem
-          <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
-        </Link>
       </div>
 
-      <div className="max-w-5xl mx-auto px-6 sm:px-12 pb-16">
+      <div className="max-w-5xl mx-auto px-6 sm:px-12 pb-16 pt-10">
         <h1 className="text-4xl sm:text-5xl font-bold italic leading-tight mb-8">
           Your problems.
         </h1>

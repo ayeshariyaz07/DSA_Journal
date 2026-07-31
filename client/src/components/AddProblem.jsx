@@ -53,6 +53,8 @@ function AddProblem() {
     setAnalyzing(true);
 
     try {
+      // Gemini analysis now happens server-side, inside POST /problems —
+      // just send the raw fields, backend returns pattern + reasoning already filled in.
       const saved = await createProblem({
         title,
         source,
@@ -61,13 +63,14 @@ function AddProblem() {
         myNotes: notes,
       });
 
-      console.log("Saved to backend:", saved);
+      console.log("Saved with AI analysis:", saved);
+
       setAnalyzing(false);
       setDone(true);
     } catch (err) {
-      console.error("Failed to save problem:", err);
+      console.log(err);
       setAnalyzing(false);
-      setError("Couldn't save your problem — check your connection and try again.");
+      setError("Failed to save problem");
     }
   };
 
@@ -94,10 +97,10 @@ function AddProblem() {
   const verdictColor = analyzing
     ? "text-amber-500"
     : done
-    ? "text-emerald-500"
-    : error
-    ? "text-rose-500"
-    : "text-slate-400";
+      ? "text-emerald-500"
+      : error
+        ? "text-rose-500"
+        : "text-slate-400";
 
   return (
     <div className="min-h-screen w-full bg-[#FAFBFA] text-[#14171C] flex flex-col font-sans selection:bg-emerald-200">
@@ -122,13 +125,12 @@ function AddProblem() {
           {STEPS.map((s, i) => (
             <div
               key={s}
-              className={`h-1 rounded-full transition-all duration-500 ease-out ${
-                i < step || done
-                  ? "w-6 bg-emerald-500"
-                  : i === step
+              className={`h-1 rounded-full transition-all duration-500 ease-out ${i < step || done
+                ? "w-6 bg-emerald-500"
+                : i === step
                   ? "w-8 bg-[#14171C]"
                   : "w-3 bg-slate-200"
-              }`}
+                }`}
             />
           ))}
         </div>
@@ -140,13 +142,11 @@ function AddProblem() {
           {!done ? (
             <div
               key={step}
-              className={`transition-all duration-500 ease-out ${
-                shake ? "animate-[wiggle_0.4s_ease-in-out]" : ""
-              }`}
+              className={`transition-all duration-500 ease-out ${shake ? "animate-[wiggle_0.4s_ease-in-out]" : ""
+                }`}
               style={{
-                animation: `${
-                  dir === 1 ? "slideUp" : "slideDown"
-                } 0.45s cubic-bezier(0.16,1,0.3,1)`,
+                animation: `${dir === 1 ? "slideUp" : "slideDown"
+                  } 0.45s cubic-bezier(0.16,1,0.3,1)`,
               }}
             >
               {step === 0 && (
@@ -275,7 +275,7 @@ function AddProblem() {
                 Logged &ldquo;{title}&rdquo;
               </h1>
               <p className="text-slate-500 text-xl mt-3">
-                Filed under {source} — saved to your database.
+                Filed under {source} — pattern tagged and saved to your database.
               </p>
               <div className="flex items-center gap-4 mt-10">
                 <button

@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { ArrowRight } from 'lucide-react'
+import { signupUser } from '../api'
+import { useEffect } from "react";
 
 function Signup() {
   const navigate = useNavigate()
@@ -11,7 +13,15 @@ function Signup() {
   const [error, setError] = useState('')
   const [signingUp, setSigningUp] = useState(false)
 
-  const handleSubmit = (e) => {
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+
+    if (token) {
+      navigate("/");
+    }
+  }, [navigate]);
+
+  const handleSubmit = async (e) => {
     e.preventDefault()
     setError('')
 
@@ -19,24 +29,36 @@ function Signup() {
       setError('All fields are required.')
       return
     }
+
     if (password.length < 6) {
       setError('Password must be at least 6 characters.')
       return
     }
+
     if (password !== confirmPassword) {
       setError('Passwords do not match.')
       return
     }
 
-    setSigningUp(true)
+    try {
+      setSigningUp(true)
 
-    // Fake signup delay — replace with a real signup API call later
-    setTimeout(() => {
-      console.log('Fake signup:', { name, email, password })
+      await signupUser({
+        name,
+        email,
+        password,
+      })
+
+      alert('Account created successfully!')
+
+      navigate('/login')
+    } catch (err) {
+      setError(err.message)
+    } finally {
       setSigningUp(false)
-      navigate('/')
-    }, 1500)
+    }
   }
+
 
   return (
     <div className="min-h-screen w-full bg-[#FAFBFA] text-[#14171C] flex flex-col font-sans selection:bg-emerald-200">
@@ -44,10 +66,10 @@ function Signup() {
       <div className="px-6 sm:px-12 py-6 sm:py-8">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 rounded-lg bg-[#14171C] text-white font-bold flex items-center justify-center text-sm">
-            P
+            DS
           </div>
           <span className="font-mono text-xs sm:text-sm tracking-widest text-slate-400">
-            problem-tracker
+            DSA Journal
           </span>
         </div>
       </div>

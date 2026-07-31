@@ -1,6 +1,8 @@
 import { useState } from 'react'
+import { loginUser } from '../api'
 import { Link, useNavigate } from 'react-router-dom'
 import { ArrowRight } from 'lucide-react'
+import { useEffect } from "react";
 
 function Login() {
   const navigate = useNavigate()
@@ -9,7 +11,16 @@ function Login() {
   const [error, setError] = useState('')
   const [loggingIn, setLoggingIn] = useState(false)
 
-  const handleSubmit = (e) => {
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+
+    if (token) {
+      navigate("/");
+    }
+  }, [navigate]);
+  
+  const handleSubmit = async (e) => {
     e.preventDefault()
     setError('')
 
@@ -18,14 +29,27 @@ function Login() {
       return
     }
 
-    setLoggingIn(true)
+    try {
+      setLoggingIn(true)
 
-    // Fake auth delay — replace with a real login API call later
-    setTimeout(() => {
-      console.log('Fake login attempt:', { email, password })
-      setLoggingIn(false)
+      const data = await loginUser({
+        email,
+        password,
+      })
+
+      // Save token
+      localStorage.setItem('token', data.token)
+
+      // Save logged in user
+      localStorage.setItem('user', JSON.stringify(data.user))
+
       navigate('/')
-    }, 1500)
+
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setLoggingIn(false)
+    }
   }
 
   return (
@@ -34,10 +58,10 @@ function Login() {
       <div className="px-6 sm:px-12 py-6 sm:py-8">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 rounded-lg bg-[#14171C] text-white font-bold flex items-center justify-center text-sm">
-            P
+            DS
           </div>
           <span className="font-mono text-xs sm:text-sm tracking-widest text-slate-400">
-            problem-tracker
+           DSA Journal
           </span>
         </div>
       </div>
