@@ -114,6 +114,29 @@ export async function signupUser(userData) {
   return data;
 }
 
+// ==============Verify Otp==============
+
+export const verifyOtp = async (email, otp) => {
+  const response = await fetch("http://localhost:5000/api/users/verify-otp", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      email,
+      otp,
+    }),
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.message);
+  }
+
+  return data;
+};
+
 // ================= Login =================
 
 export async function loginUser(userData) {

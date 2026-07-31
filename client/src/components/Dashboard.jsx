@@ -4,10 +4,20 @@ import { ArrowRight, User, LogOut, UserCircle } from 'lucide-react'
 import ProblemCard from '../components/ProblemCard'
 import { fetchProblems } from '../api'
 
+const ratingRank = { Optimal: 1, Suboptimal: 2, 'Needs improvement': 3 }
+
 const sortOptions = [
   { value: 'newest', label: 'Newest first' },
   { value: 'oldest', label: 'Oldest first' },
   { value: 'titleAZ', label: 'Title: A–Z' },
+  { value: 'ratingBest', label: 'Rating: Best first' },
+  { value: 'ratingWorst', label: 'Rating: Worst first' },
+]
+
+const ratingStats = [
+  { key: 'Optimal', label: 'Optimal', dot: 'bg-emerald-500', text: 'text-emerald-600', bg: 'bg-emerald-50 border-emerald-100', bar: 'bg-emerald-500' },
+  { key: 'Suboptimal', label: 'Suboptimal', dot: 'bg-amber-500', text: 'text-amber-600', bg: 'bg-amber-50 border-amber-100', bar: 'bg-amber-500' },
+  { key: 'Needs improvement', label: 'Needs improvement', dot: 'bg-rose-500', text: 'text-rose-600', bg: 'bg-rose-50 border-rose-100', bar: 'bg-rose-500' },
 ]
 
 function Dashboard() {
@@ -17,6 +27,7 @@ function Dashboard() {
   const [error, setError] = useState('')
 
   const [activeFilter, setActiveFilter] = useState('All')
+  const [ratingFilter, setRatingFilter] = useState('All')
   const [sortBy, setSortBy] = useState('newest')
   const [search, setSearch] = useState('')
 
@@ -30,7 +41,6 @@ function Dashboard() {
     navigate('/login')
   }
 
-  // Close the dropdown when clicking outside it
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (menuRef.current && !menuRef.current.contains(e.target)) {
@@ -60,9 +70,14 @@ function Dashboard() {
     return acc
   }, {})
 
+  const ratedTotal = problems.filter((p) => p.rating).length
+
   let visibleProblems = [...problems]
   if (activeFilter !== 'All') {
     visibleProblems = visibleProblems.filter((p) => p.pattern === activeFilter)
+  }
+  if (ratingFilter !== 'All') {
+    visibleProblems = visibleProblems.filter((p) => p.rating === ratingFilter)
   }
   if (search.trim()) {
     const q = search.trim().toLowerCase()
@@ -75,6 +90,10 @@ function Dashboard() {
         return new Date(a.createdAt) - new Date(b.createdAt)
       case 'titleAZ':
         return a.title.localeCompare(b.title)
+      case 'ratingBest':
+        return (ratingRank[a.rating] || 99) - (ratingRank[b.rating] || 99)
+      case 'ratingWorst':
+        return (ratingRank[b.rating] || 0) - (ratingRank[a.rating] || 0)
       case 'newest':
       default:
         return new Date(b.createdAt) - new Date(a.createdAt)
@@ -86,7 +105,6 @@ function Dashboard() {
       {/* top bar */}
       <div className="w-full border-b border-slate-100">
         <div className="max-w-5xl mx-auto px-6 sm:px-12 py-6 flex items-center justify-between">
-          {/* Left — brand */}
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-[#14171C] text-white flex items-center justify-center font-bold italic">
               DS
@@ -99,7 +117,6 @@ function Dashboard() {
             </div>
           </div>
 
-          {/* Right — actions */}
           <div className="flex items-center gap-3">
             <Link
               to="/add"
@@ -166,6 +183,34 @@ function Dashboard() {
 
         {!loading && !error && (
           <>
+            {/* rating stat cards */}
+            {ratedTotal > 0 && (
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-10">
+                {ratingStats.map((stat) => {
+                  const count = problems.filter((p) => p.rating === stat.key).length
+                  const pct = ratedTotal ? Math.round((count / ratedTotal) * 100) : 0
+                  return (
+                    <button
+                      key={stat.key}
+                      onClick={() => setRatingFilter(ratingFilter === stat.key ? 'All' : stat.key)}
+                      className={`text-left border rounded-xl p-4 transition-shadow hover:shadow-sm ${stat.bg} ${
+                        ratingFilter === stat.key ? 'ring-2 ring-offset-1 ring-[#14171C]' : ''
+                      }`}
+                    >
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className={`w-2.5 h-2.5 rounded-full ${stat.dot}`} />
+                        <span className={`text-2xl font-bold ${stat.text}`}>{count}</span>
+                      </div>
+                      <p className="text-sm font-medium text-slate-500 mb-2">{stat.label}</p>
+                      <div className="h-1 w-full bg-white/70 rounded-full overflow-hidden">
+                        <div className={`h-full ${stat.bar}`} style={{ width: `${pct}%` }} />
+                      </div>
+                    </button>
+                  )
+                })}
+              </div>
+            )}
+
             {/* search + sort */}
             <div className="flex flex-col sm:flex-row gap-3 mb-5">
               <input
@@ -187,7 +232,7 @@ function Dashboard() {
             </div>
 
             {/* pattern filter pills */}
-            <div className="flex flex-wrap gap-2 mb-10">
+            <div className="flex flex-wrap gap-2 mb-3">
               <button
                 onClick={() => setActiveFilter('All')}
                 className={`flex items-center gap-1.5 text-sm font-medium px-3 py-1.5 rounded-full border transition-colors ${
@@ -218,6 +263,28 @@ function Dashboard() {
                 </button>
               ))}
             </div>
+
+            {/* rating filter, only shown once ratings exist */}
+            {ratedTotal > 0 && (
+              <div className="flex flex-wrap items-center gap-2 mb-10">
+                <span className="text-xs font-mono uppercase tracking-wide text-slate-400 mr-1">
+                  Rating:
+                </span>
+                {['All', 'Optimal', 'Suboptimal', 'Needs improvement'].map((r) => (
+                  <button
+                    key={r}
+                    onClick={() => setRatingFilter(r)}
+                    className={`text-xs font-medium px-3 py-1 rounded-full border transition-colors ${
+                      ratingFilter === r
+                        ? 'bg-[#14171C] text-white border-[#14171C]'
+                        : 'bg-white text-slate-600 border-slate-200 hover:border-emerald-400'
+                    }`}
+                  >
+                    {r}
+                  </button>
+                ))}
+              </div>
+            )}
 
             {/* grid */}
             {visibleProblems.length === 0 ? (

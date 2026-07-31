@@ -47,11 +47,21 @@ function Signup() {
         name,
         email,
         password,
-      })
+      });
 
-      alert('Account created successfully!')
 
-      navigate('/login')
+
+      localStorage.setItem(
+        "signupData",
+        JSON.stringify({
+          email,
+        })
+      );
+
+      alert("OTP sent to your email!");
+
+      navigate("/verify-otp");
+
     } catch (err) {
       setError(err.message)
     } finally {

@@ -1,6 +1,8 @@
 const User = require("../models/User");
+const Otp = require("../models/Otp");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
+const sendEmail = require("../utils/sendEmail");
 
 // =====================
 // Signup
@@ -26,14 +28,90 @@ const signup = async (req, res) => {
     }
 
     // Hash password
+    // Generate OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+    // Remove any old OTP for this email
+    await Otp.deleteMany({ email });
+
+    // Save the new OTP
+    // Hash password first
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Create user
-    const newUser = await User.create({
+    await Otp.create({
       name,
       email,
       password: hashedPassword,
+      otp,
+      expiresAt: new Date(Date.now() + 5 * 60 * 1000),
     });
+    const savedOtp = await Otp.findOne({ email });
+    console.log("Saved OTP:", savedOtp);
+
+    // Send OTP email
+    await sendEmail(
+      email,
+      "Email Verification",
+      `Your OTP is ${otp}. It is valid for 5 minutes.`
+    );
+
+    res.status(200).json({
+      message: "OTP sent successfully",
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      message: error.message,
+    });
+  }
+};
+
+
+/// otp verification
+
+
+const verifyOtp = async (req, res) => {
+  const { email, otp } = req.body;
+
+  console.log("Email received:", email);
+  try {
+    const { email, otp } = req.body;
+
+    // Find OTP record
+    const otpData = await Otp.findOne({ email });
+    console.log("OTP Data:", otpData);
+
+    if (!otpData) {
+      return res.status(400).json({
+        message: "OTP not found",
+      });
+    }
+
+    // Check if OTP has expired
+    if (otpData.expiresAt < new Date()) {
+      await Otp.deleteOne({ email });
+
+      return res.status(400).json({
+        message: "OTP has expired",
+      });
+    }
+
+    // Check if OTP matches
+    if (otpData.otp !== otp) {
+      return res.status(400).json({
+        message: "Invalid OTP",
+      });
+    }
+
+    // Create the user
+    const newUser = await User.create({
+      name: otpData.name,
+      email: otpData.email,
+      password: otpData.password,
+    });
+
+    // Delete the OTP after successful verification
+    await Otp.deleteOne({ email });
 
     res.status(201).json({
       message: "Signup Successful",
@@ -50,6 +128,8 @@ const signup = async (req, res) => {
     });
   }
 };
+
+
 
 // =====================
 // Login
@@ -144,6 +224,7 @@ const updateUser = async (req, res) => {
 
 module.exports = {
   signup,
+  verifyOtp,
   login,
   getUser,
   updateUser,

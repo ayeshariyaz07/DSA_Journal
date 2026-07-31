@@ -3,28 +3,37 @@ const { GoogleGenerativeAI } = require("@google/generative-ai");
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
-const analyzeWithGemini = async (title, content) => {
- const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
+const analyzeWithGemini = async (title, content, myNotes) => {
+  const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
+
   const prompt = `
-Analyze this DSA problem.
+Analyze this DSA problem and the user's solution/approach.
 
 Title:
 ${title}
 
-Problem:
+Problem statement:
 ${content}
 
-Return only JSON:
+User's solution / approach notes:
+${myNotes || "(none provided)"}
+
+Identify the primary algorithmic pattern the problem belongs to and explain why it applies.
+
+If the user's solution/approach above contains actual code or a clear algorithmic approach (not just empty or a restatement of the problem), also rate that solution as exactly one of: "Optimal", "Suboptimal", or "Needs improvement", based on its time/space complexity and correctness, and give one short line of feedback on what could be improved. If no real code/approach was provided, set rating and ratingFeedback to null.
+
+Return only JSON, no markdown formatting, no extra text:
 
 {
  "pattern":"",
- "reasoning":""
+ "reasoning":"",
+ "rating":"",
+ "ratingFeedback":""
 }
 `;
 
   const result = await model.generateContent(prompt);
   const text = result.response.text();
-  
   const clean = text.replace("```json", "").replace("```", "").trim();
 
   return JSON.parse(clean);
@@ -35,11 +44,19 @@ const createProblem = async (req, res) => {
   try {
     let pattern = "";
     let reasoning = "";
+    let rating = "";
+    let ratingFeedback = "";
 
     try {
-      const analysis = await analyzeWithGemini(req.body.title, req.body.content);
+      const analysis = await analyzeWithGemini(
+        req.body.title,
+        req.body.content,
+        req.body.myNotes
+      );
       pattern = analysis.pattern;
       reasoning = analysis.reasoning;
+      rating = analysis.rating;
+      ratingFeedback = analysis.ratingFeedback;
     } catch (aiError) {
       console.error("Gemini analysis failed, saving without it:", aiError.message);
     }
@@ -48,6 +65,8 @@ const createProblem = async (req, res) => {
       ...req.body,
       pattern,
       reasoning,
+      rating,
+      ratingFeedback,
     });
 
     res.status(201).json(problem);

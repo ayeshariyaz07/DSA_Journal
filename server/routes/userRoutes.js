@@ -3,6 +3,7 @@ const {
   getUser,
   updateUser,
   signup,
+  verifyOtp,
   login,
 } = require("../controllers/userController");
 
@@ -12,6 +13,7 @@ const router = express.Router();
 
 // Public routes
 router.post("/signup", signup);
+router.post("/verify-otp", verifyOtp);
 router.post("/login", login);
 
 // Protected routes
