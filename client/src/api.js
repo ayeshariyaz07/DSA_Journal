@@ -117,7 +117,7 @@ export async function signupUser(userData) {
 // ==============Verify Otp==============
 
 export const verifyOtp = async (email, otp) => {
-  const response = await fetch("http://localhost:5000/api/users/verify-otp", {
+  const response = await fetch(`${USER_URL}/verify-otp`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -161,7 +161,7 @@ export async function loginUser(userData) {
 export async function analyzeProblem(problem) {
   const token = localStorage.getItem("token");
 
-  const res = await fetch("http://localhost:5000/api/ai/analyze", {
+  const res = await fetch(`${BASE_URL.replace("/problems", "/ai")}/analyze`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
