@@ -32,13 +32,13 @@ const ratingText = {
 }
 
 function ProblemCard({ problem }) {
-  const { id, title, source, pattern, rating } = problem
+  const { _id, title, source, pattern, rating } = problem
   const patternStyle = patternColors[pattern] || 'bg-slate-100 text-slate-600'
   const borderStyle = ratingBorder[rating] || 'border-l-slate-200'
 
   return (
     <Link
-      to={`/problem/${id}`}
+      to={`/problem/${_id}`}
       className={`block bg-white border border-slate-200 border-l-4 ${borderStyle} rounded-xl p-5 hover:shadow-sm transition-shadow`}
     >
       <div className="flex items-start justify-between gap-2 mb-2">
